@@ -1,16 +1,65 @@
-# 📊 Proyecto de Modelado Predictivo de Créditos
+# 📊 Credit Scoring MLOps Pipeline
 
-Este repositorio contiene el desarrollo de un **modelo de machine learning** para predecir el comportamiento de nuevos u
-en una empresa financiera.
-
-El proyecto se enmarca dentro de un flujo **MLOps**, garantizando buenas prácticas de colaboración, pruebas, despliegue y monitoreo.
+> Pipeline de Machine Learning y MLOps para la predicción del comportamiento de nuevos clientes en una empresa financiera, abarcando desde la carga de datos hasta el despliegue y monitoreo del modelo.
 
 ---
 
-## 📁 Estructura del proyecto
+# 📌 Descripción del proyecto
 
-```bash
-mlops_pipeline/
+Las instituciones financieras necesitan evaluar el riesgo asociado a nuevos clientes para optimizar la concesión de créditos y reducir pérdidas.
+
+Este proyecto desarrolla un pipeline completo de Machine Learning siguiendo principios de **MLOps**, incorporando buenas prácticas para la construcción, evaluación, despliegue y monitoreo de modelos predictivos.
+
+Más allá del entrenamiento del modelo, el objetivo es demostrar cómo organizar un proyecto de Ciencia de Datos con una arquitectura preparada para evolucionar hacia un entorno productivo.
+
+---
+
+# 🎯 Objetivo
+
+Construir un flujo reproducible que permita:
+
+- Cargar y explorar datos financieros.
+- Generar variables predictivas.
+- Entrenar y comparar modelos de clasificación.
+- Seleccionar el mejor modelo.
+- Preparar el despliegue mediante Docker.
+- Monitorear continuamente el desempeño del modelo.
+
+---
+
+# 🏗️ Arquitectura del Pipeline
+
+```text
+Carga de datos
+       │
+       ▼
+Análisis Exploratorio (EDA)
+       │
+       ▼
+Feature Engineering
+       │
+       ▼
+Modelo Benchmark
+       │
+       ▼
+Entrenamiento de Modelos
+       │
+       ▼
+Evaluación
+       │
+       ▼
+Despliegue (Docker)
+       │
+       ▼
+Monitoreo
+```
+
+---
+
+# 📁 Estructura del repositorio
+
+```text
+credit-scoring-mlops
 │
 ├── src/
 │   ├── Cargar_datos.ipynb
@@ -25,63 +74,81 @@ mlops_pipeline/
 ├── Base_de_datos.csv
 ├── requirements.txt
 ├── .gitignore
-├── readme.md
+├── README.md
 └── set_up.bat
 ```
 
 ---
 
-## 🚀 Flujo de trabajo
+# ⚙️ Componentes principales
 
-1. **Cargar_datos.ipynb**  
-Notebook para cargar datos desde un CSV de ejemplo.  
-> *En producción, Los datos se cargarán desde DWH o Data Lake.*
-
-2. **comprension_eda.ipynb**  
-Análisis exploratorio de datos (EDA) y generación de artefactos experimentales.
-
-3. **ft_engineering.py**  
-Creación de *features* y división de datos en entrenamiento y validación.  
-Incluye construcción de pipelines.
-
-4. **heuristic_model.py**  
-Modelo base de referencia (benchmark heurístico).
-
-5. **model_training.py**  
-Entrenamiento y evaluación de múltiples modelos.  
-- Funciones clave: `sumarize_classification` y `build_model`.  
-- Incluye tablas comparativas y visualizaciones.
-
-6. **model_deploy.py**  
-Despliegue del mejor modelo seleccionado.  
-- Creación de una imagen con dependencias y código.  
-- Exposición de un **endpoint** para predicciones batch.
-
-7. **model_evaluation.py**  
-Generación de métricas del modelo desplegado en un dashboard de evaluación.
-
-8. **model_monitoring.py**  
-Monitoreo periódico para:  
-- Detectar *data drift*.  
-- Comparar predicciones vs. datos reales.  
-- Asegurar el desempeño continuo del modelo.
+| Archivo | Descripción |
+|----------|-------------|
+| `Cargar_datos.ipynb` | Carga inicial de los datos desde un archivo CSV de ejemplo. |
+| `comprension_eda.ipynb` | Análisis exploratorio de datos y comprensión del problema. |
+| `ft_engineering.py` | Ingeniería de variables y preparación del conjunto de datos para modelado. |
+| `heuristic_model.py` | Implementación de un modelo heurístico utilizado como benchmark inicial. |
+| `model_training.py` | Entrenamiento, evaluación y comparación de modelos de Machine Learning. |
+| `model_deploy.py` | Preparación del modelo para su despliegue mediante Docker. |
+| `model_evaluation.py` | Evaluación del modelo desplegado y generación de métricas. |
+| `model_monitoring.py` | Monitoreo continuo para detectar degradación del desempeño y data drift. |
 
 ---
 
-## 🚀 Despliegue y Ejecución del Modelo con Docker
+# 🐳 Ejecución del proyecto
 
-Una vez clonado el repositorio se puede levantar el servicio en docker
+### Construcción de la imagen Docker
 
-### 📋 Prerrequisitos
+```bash
+docker build -t api-creditos .
+```
 
-- **Docker Desktop**: Asegúrate de que Docker esté instalado y en ejecución en tu máquina. Puedes descargarlo desde [el sitio oficial de Docker](https://www.docker.com/products/docker-desktop/).
-- **Git**: Necesitas Git para clonar este repositorio.
-- **Terminal de Comandos**: Una terminal como PowerShell, CMD, Bash, o similar.
+### Ejecución del contenedor
 
-### 🛠 Construcción de imagen con docker
+```bash
+docker run -d -p 8000:8000 --name api-creditos api-creditos
+```
 
-En la terminal ejecutar docker build -t api-creditos .
+---
 
-Una vez construida la imagen, este comando la ejecutará como un contenedor:
+# 🛠️ Tecnologías utilizadas
 
-docker run -d -p 8000:8000 --name api-creditos-container api-creditos
+- Python
+- Pandas
+- NumPy
+- Scikit-learn
+- Docker
+- Git
+- GitHub
+
+---
+
+# 💼 Competencias demostradas
+
+- Machine Learning
+- Clasificación supervisada
+- Ingeniería de variables
+- Evaluación y comparación de modelos
+- Organización modular de proyectos
+- Despliegue de modelos mediante Docker
+- Monitoreo de modelos
+- Buenas prácticas de MLOps
+- Versionado con Git y GitHub
+
+---
+
+# ⭐ Valor agregado del proyecto
+
+- Implementa un flujo completo de Machine Learning bajo principios de MLOps.
+- Separa claramente las distintas etapas del ciclo de vida del modelo.
+- Incluye un modelo benchmark para facilitar la comparación de desempeño.
+- Incorpora despliegue y monitoreo, componentes fundamentales en proyectos productivos.
+- Presenta una estructura modular, escalable y fácil de mantener.
+
+---
+
+## 👩‍💻 Autora
+
+**Vanina Cavallin**
+
+Doctora en Ciencias Biológicas | Jr. Data Scientist
