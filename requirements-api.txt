@@ -1,0 +1,10 @@
+# Dependencias mínimas para la imagen Docker de la API
+pandas
+numpy
+matplotlib
+scikit-learn
+xgboost
+joblib
+fastapi
+uvicorn[standard]
+pydantic
