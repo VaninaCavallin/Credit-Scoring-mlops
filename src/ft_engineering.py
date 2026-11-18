@@ -7,7 +7,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder
 
 
-TARGET = "Pago_a_tiempo"
+TARGET = "Pago_atiempo"
 
 # Numéricas: solo imputación
 COLUMNAS_NUMERIC = [

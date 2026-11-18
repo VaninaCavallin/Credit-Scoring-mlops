@@ -1,17 +1,28 @@
+# Datos
 pandas
 numpy
 openpyxl
-db-dtypes
-jupyter
-notebook
-ipykernel
+
+# Visualización
+matplotlib
 seaborn
-ipywidgets
+plotly
+
+# Machine Learning
 scikit-learn
 xgboost
-pydantic
+
+# Monitoreo (src/model_monitoring.py)
+streamlit
+evidently
+requests
+
+# API de predicción (pendiente de implementar)
 fastapi
 uvicorn[standard]
-streamlit
-plotly
-evidently
+pydantic
+
+# Entorno de notebooks
+jupyter
+ipykernel
+ipywidgets
