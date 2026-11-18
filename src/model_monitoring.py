@@ -8,15 +8,16 @@ import plotly.express as px
 import plotly.graph_objects as go
 from evidently import Report
 from evidently.presets import DataDriftPreset
-from sklearn.model_selection import train_test_split
+
+import carga_datos
+import ft_engineering
 
 # ================================
 # 1. Configuración
 # ================================
 
-API_URL = "http://localhost:8000/predict_batch"
-DATASET_PATH = ""  # dataset transformado
-MONITOR_LOG = "monitoring_log.csv"  # dataset para monitorear
+API_URL = os.getenv("API_URL", "http://localhost:8000/predict_batch")
+MONITOR_LOG = os.path.join(os.path.dirname(__file__), "..", "monitoring_log.csv")  # dataset para monitorear
 
 # ================================
 # 2. Cargar dataset y dividir
@@ -24,13 +25,9 @@ MONITOR_LOG = "monitoring_log.csv"  # dataset para monitorear
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv(DATASET_PATH)
-    target = "Pago_atiempo"
-    X = df.drop(columns=[target])
-    y = df[target]
-    X_ref, X_new, y_ref, y_new = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+    # Misma división que en el entrenamiento: train = referencia, test = "datos nuevos"
+    df = carga_datos.cargarDatos()
+    X_ref, X_new, y_ref, y_new = ft_engineering.split_data(df)
     return X_ref, X_new, y_ref, y_new
 
 X_ref, X_new, y_ref, y_new = load_data()
@@ -40,9 +37,11 @@ X_ref, X_new, y_ref, y_new = load_data()
 # ================================
 
 def get_predictions(X_batch: pd.DataFrame):
-    payload = {"batch": X_batch.values.tolist()}
+    # Se envía cada cliente como diccionario; los NaN pasan a null para que sean JSON válido
+    records = X_batch.astype(object).where(X_batch.notna(), None).to_dict(orient="records")
+    payload = {"batch": records}
     try:
-        response = requests.post(API_URL, json=payload)
+        response = requests.post(API_URL, json=payload, timeout=30)
         response.raise_for_status()
         preds = response.json()["predictions"]
         return preds
@@ -70,8 +69,8 @@ def log_predictions(X_batch, preds):
 
 def generate_drift_report(ref_data, new_data):
     report = Report(metrics=[DataDriftPreset()])
-    report.run(reference_data=ref_data, current_data=new_data)
-    return report
+    # En Evidently >= 0.7, run() devuelve un Snapshot con los resultados
+    return report.run(reference_data=ref_data, current_data=new_data)
 
 # ================================
 # 6. Streamlit UI con gráficas
@@ -139,7 +138,7 @@ if os.path.exists(MONITOR_LOG):
 
                 # Agrupar por minuto para mejor visualización
                 temporal_data = logged_data.groupby(
-                    logged_data['timestamp'].dt.floor('T')
+                    logged_data['timestamp'].dt.floor('min')
                 )['prediction'].mean().reset_index()
 
                 fig_time = px.line(
@@ -206,34 +205,26 @@ if os.path.exists(MONITOR_LOG):
     with tab2:
         st.subheader("📊 Reporte de Data Drift")
 
-        drift_report = generate_drift_report(
-            X_ref,
-            logged_data.drop(columns=['prediction', 'timestamp'], errors='ignore')
-        )
+        # El CSV del log pierde los tipos (por ejemplo, tipo_credito vuelve como número):
+        # se aplica la misma limpieza que a los datos de referencia
+        current_data = ft_engineering.clean_features(logged_data[ft_engineering.FEATURES])
+        drift_report = generate_drift_report(X_ref, current_data)
 
-        try:
-            st.components.v1.html(drift_report._repr_html_(), height=1000, scrolling=True)
-        except:
-            st.write("✅ Reporte de Drift generado exitosamente")
-            st.write(f"📊 Datos de referencia: {X_ref.shape}, Datos actuales: {logged_data.drop(columns=['prediction', 'timestamp'], errors='ignore').shape}")
+        # Evidently >= 0.7: el primer resultado es la cantidad y proporción de columnas con drift
+        drift_data = drift_report.dict()
+        drifted = drift_data['metrics'][0]['value']
+        drift_share_limit = drift_data['metrics'][0]['config'].get('drift_share', 0.5)
+        n_features = len(ft_engineering.FEATURES)
 
-        try:
-            drift_data = drift_report.as_dict()
+        col1, col2 = st.columns(2)
 
-            if 'metrics' in drift_data and len(drift_data['metrics']) > 0:
-                dataset_drift = drift_data['metrics'][0].get('result', {}).get('dataset_drift', 'No disponible')
+        with col1:
+            st.metric("Dataset Drift Detectado", "Sí" if drifted['share'] >= drift_share_limit else "No")
 
-                col1, col2 = st.columns(2)
+        with col2:
+            st.metric("Features con Drift", f"{int(drifted['count'])}/{n_features}")
 
-                with col1:
-                    st.metric("Dataset Drift Detectado", "Sí" if dataset_drift else "No")
-
-                with col2:
-                    feature_drifts = drift_data['metrics'][0].get('result', {}).get('drift_by_columns', {})
-                    drift_count = sum(1 for v in feature_drifts.values() if v) if feature_drifts else 0
-                    st.metric("Features con Drift", f"{drift_count}/{len(feature_drifts)}" if feature_drifts else "0")
-        except:
-            pass
+        st.components.v1.html(drift_report.get_html_str(as_iframe=False), height=1000, scrolling=True)
 
     with tab3:
         st.subheader("📁 Log de Monitoreo")
